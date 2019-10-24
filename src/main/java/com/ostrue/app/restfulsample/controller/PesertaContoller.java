@@ -55,5 +55,21 @@ public class PesertaContoller {
         response.setHeader("Location",uri.toASCIIString());
     }
 
+    @RequestMapping(value = "/peserta/{id}", method = RequestMethod.PUT)
+    @ResponseStatus(HttpStatus.OK)
+    public void update(@PathVariable String id, @RequestBody Peserta peserta){
+        Optional<Peserta> tPeserta = pesertaRepository.findById(id);
+        if(tPeserta == null){
+            throw new IllegalStateException("No Peserta with id : " + id);
+        }
+        peserta.setId(id);
+        pesertaRepository.save(peserta);
+    }
+
+    @RequestMapping(value = "/peserta/{id}", method = RequestMethod.DELETE)
+    @ResponseStatus(HttpStatus.OK)
+    public void delete(@PathVariable String id){
+        pesertaRepository.deleteById(id);
+    }
 }
 
