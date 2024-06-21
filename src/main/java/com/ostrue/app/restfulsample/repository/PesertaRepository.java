@@ -3,7 +3,7 @@
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.ostrue.app.restfulsample.service;
+package com.ostrue.app.restfulsample.repository;
 
 import com.ostrue.app.restfulsample.model.Peserta;
 import org.springframework.data.repository.CrudRepository;

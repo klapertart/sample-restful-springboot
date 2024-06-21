@@ -6,19 +6,19 @@
 package com.ostrue.app.restfulsample.controller;
 
 import com.ostrue.app.restfulsample.model.Peserta;
-import com.ostrue.app.restfulsample.service.PesertaRepository;
+import com.ostrue.app.restfulsample.model.ResponseMessage;
+import com.ostrue.app.restfulsample.repository.PesertaRepository;
 import java.net.URI;
+import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriTemplate;
 
 /**
@@ -33,28 +33,96 @@ public class PesertaContoller {
     @RequestMapping("/")
     public String home() {
         return "Hello World!";
-    }    
-    
-    @RequestMapping(value="/peserta", method = RequestMethod.GET)
-    public Iterable<Peserta> all(){
-        return pesertaRepository.findAll();
-    }    
-    
-    @RequestMapping(value = "/peserta/{id}", method = RequestMethod.GET)
-    public Optional<Peserta> findById(@PathVariable String id){
-        return pesertaRepository.findById(id);
-    }
-    
-    @RequestMapping(value = "/peserta", method = RequestMethod.POST)
-    @ResponseStatus(HttpStatus.CREATED)
-    public void create(@RequestBody Peserta peserta, HttpServletRequest request, HttpServletResponse response){
-        pesertaRepository.save(peserta);
-        String id = peserta.getId();
-        String requestUrl = request.getRequestURL().toString();
-        URI uri = new UriTemplate("{requestUrl}/{id}").expand(requestUrl,id);
-        response.setHeader("Location",uri.toASCIIString());
     }
 
+
+    @PostMapping(path = "/employees")
+    public ResponseEntity<ResponseMessage> create(@RequestBody Peserta peserta){
+        Peserta pesertaSaved = pesertaRepository.save(peserta);
+
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new ResponseMessage<>(HttpStatus.CREATED.value(), null, pesertaSaved
+        ));
+    }
+
+    @GetMapping(path ="/employees")
+    public ResponseEntity<ResponseMessage> all() {
+        Iterable<Peserta> all = pesertaRepository.findAll();
+
+        int count = 0;
+        for (Peserta peserta : all) {
+            count++;
+        }
+
+        if (count != 0){
+            return ResponseEntity
+                    .status(HttpStatus.OK).body(new ResponseMessage(HttpStatus.OK.value(), null, all));
+        }else {
+            return ResponseEntity
+                    .status(HttpStatus.NO_CONTENT)
+                    .body(new ResponseMessage<>(HttpStatus.NO_CONTENT.value(), "data tidak ada", all));
+        }
+    }
+    
+    @RequestMapping(value = "/employees/{id}", method = RequestMethod.GET)
+    public ResponseEntity<ResponseMessage> findById(@PathVariable String id){
+        Optional<Peserta> byId = pesertaRepository.findById(id);
+
+        if (!byId.isPresent()){
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseMessage(HttpStatus.NOT_FOUND.value(), "data tidak ada", null));
+        }else{
+            Peserta tPerserta = new Peserta();
+            byId.ifPresent(peserta -> {
+                tPerserta.setId(peserta.getId());
+                tPerserta.setNama(peserta.getNama());
+                tPerserta.setEmail(peserta.getEmail());
+            });
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseMessage(HttpStatus.OK.value(), null, tPerserta));
+        }
+    }
+
+    @DeleteMapping(path = "/employees/{id}")
+    public ResponseEntity<ResponseMessage> delete(@PathVariable String id){
+        Optional<Peserta> byId = pesertaRepository.findById(id);
+
+        if (byId.isPresent()){
+            pesertaRepository.deleteById(id);
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseMessage(HttpStatus.OK.value(), "data telah dihapus", null));
+        }else{
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseMessage(HttpStatus.NOT_FOUND.value(), "data tidak ada", null));
+        }
+    }
+
+    @PutMapping(path = "/employees/{id}")
+    public ResponseEntity<ResponseMessage> update(@PathVariable String id, @RequestBody Peserta peserta){
+        Optional<Peserta> byId = pesertaRepository.findById(id);
+
+        if (byId.isPresent()){
+            peserta.setId(id);
+            Peserta savePeserta = pesertaRepository.save(peserta);
+
+            return ResponseEntity
+                    .status(HttpStatus.OK)
+                    .body(new ResponseMessage(HttpStatus.OK.value(), "data telah diupdate", savePeserta));
+        }else{
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(new ResponseMessage(HttpStatus.NOT_FOUND.value(), "data tidak ada", null));
+        }
+    }
+
+
+/*
     @RequestMapping(value = "/peserta/{id}", method = RequestMethod.PUT)
     @ResponseStatus(HttpStatus.OK)
     public void update(@PathVariable String id, @RequestBody Peserta peserta){
@@ -65,11 +133,7 @@ public class PesertaContoller {
         peserta.setId(id);
         pesertaRepository.save(peserta);
     }
+*/
 
-    @RequestMapping(value = "/peserta/{id}", method = RequestMethod.DELETE)
-    @ResponseStatus(HttpStatus.OK)
-    public void delete(@PathVariable String id){
-        pesertaRepository.deleteById(id);
-    }
 }
 
